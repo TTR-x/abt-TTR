@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ambassadeur.ttrgestion.site/sitemap.xml

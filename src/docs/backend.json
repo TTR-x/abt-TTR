@@ -1,0 +1,196 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a basic user profile created upon registration.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the user (matches UID)." },
+        "name": { "type": "string", "description": "Full name of the user." },
+        "email": { "type": "string", "format": "email", "description": "Email address of the user." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of user registration." },
+        "isAmbassador": { "type": "boolean", "description": "Flag indicating if the user has been promoted to an ambassador.", "default": false }
+      },
+      "required": ["id", "name", "email", "createdAt", "isAmbassador"]
+    },
+    "Ambassador": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ambassador",
+      "type": "object",
+      "description": "Represents an ambassador or partner in the system.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the ambassador." },
+        "name": { "type": "string" },
+        "email": { "type": "string", "description": "Email address of the ambassador.", "format": "email" },
+        "role": {
+          "type": "string",
+          "description": "The role of the user, either an ambassador or a partner.",
+          "enum": ["ambassadeur", "partenaire"],
+          "default": "ambassadeur"
+        },
+        "referralCode": { "type": "string", "description": "Unique referral code used for referral links." },
+        "referralLink": { "type": "string", "description": "The personalized referral link for the ambassador.", "format": "uri" },
+        "level": { "type": "number", "description": "The current level of the ambassador." },
+        "monoyi": { "type": "number", "description": "Total Monoyi earned by the ambassador." },
+        "isVerified": { "type": "boolean", "description": "Indicates if the ambassador's profile has been verified." },
+        "lastNewsView": { "type": "string", "format": "date-time", "description": "The timestamp of when the user last viewed the news page." },
+        "verificationStatus": {
+          "type": "string",
+          "enum": ["not_verified", "pending", "verified", "rejected"],
+          "description": "The verification status of the ambassador's profile."
+        },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The timestamp of when the ambassador account was created." },
+        "verificationInfo": {
+            "type": "object",
+            "description": "Stores the information submitted by the ambassador for verification.",
+            "properties": {
+              "fullName": { "type": "string" },
+              "whatsappNumber": { "type": "string" },
+              "geolocationLink": { "type": "string", "format": "uri" },
+              "city": { "type": "string" },
+              "neighborhood": { "type": "string" },
+              "jobFunction": { "type": "string" },
+              "submissionDate": { "type": "string", "format": "date-time" }
+            }
+        },
+        "visualRequests": {
+          "type": "array", "description": "A list of visual design requests made by the ambassador.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": { "type": "string", "format": "date-time" },
+              "status": { "type": "string", "enum": ["pending", "completed", "denied"] },
+              "type": { "type": "string", "enum": ["simple", "custom"] },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "text": { "type": "string" }, "colors": { "type": "string" },
+                  "images": { "type": "string" }, "instructions": { "type": "string" }
+                }
+              }
+            },
+            "required": ["date", "status", "type"]
+          }
+        }
+      },
+      "required": [ "id", "email", "referralCode", "referralLink", "level", "monoyi" ]
+    },
+    "ClientReferral": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ClientReferral", "type": "object", "description": "Represents a client referral made by an ambassador.",
+      "properties": {
+        "id": { "type": "string" }, "ambassadorId": { "type": "string" },
+        "clientId": { "type": "string" }, "referralDate": { "type": "string", "format": "date-time" },
+        "isActive": { "type": "boolean" }, "commissionEarned": { "type": "number" }
+      },
+      "required": [ "id", "ambassadorId", "clientId", "referralDate", "isActive", "commissionEarned" ]
+    },
+    "Payout": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payout", "type": "object", "description": "Represents a payout request made by an ambassador.",
+      "properties": {
+        "id": { "type": "string" }, "ambassadorId": { "type": "string" },
+        "amount": { "type": "number" }, "status": { "type": "string", "enum": ["pending", "completed", "failed"] },
+        "requestDate": { "type": "string", "format": "date-time" }, "completionDate": { "type": "string", "format": "date-time" },
+        "method": { "type": "string", "enum": ["Visa", "Mobile Money"] }
+      },
+      "required": [ "id", "ambassadorId", "amount", "status", "requestDate", "method" ]
+    },
+    "News": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "News", "type": "object", "description": "Represents a news article or announcement.",
+      "properties": {
+        "id": { "type": "string" }, "title": { "type": "string" }, "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }, "imageUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["id", "title", "description", "date"]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification", "type": "object", "description": "Represents a notification for an ambassador.",
+      "properties": {
+        "id": { "type": "string" }, "title": { "type": "string" }, "message": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }, "isRead": { "type": "boolean", "default": false },
+        "link": { "type": "string" }
+      },
+      "required": ["id", "title", "message", "date", "isRead"]
+    },
+     "SupportMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SupportMessage", "type": "object", "description": "Represents a support message from a user.",
+      "properties": {
+        "id": { "type": "string" }, "userId": { "type": "string" }, "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" }, "subject": { "type": "string" }, "message": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }, "status": { "type": "string", "enum": ["new", "read", "archived"], "default": "new" }
+      },
+      "required": ["id", "userId", "name", "email", "subject", "message", "date", "status"]
+    }
+  },
+  "auth": {
+    "providers": [ "password", "anonymous" ]
+  },
+  "firestore": {
+    "structure": [
+       {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
+          "description": "Stores basic user profiles upon registration."
+        }
+      },
+      {
+        "path": "/ambassadors/{ambassadorId}",
+        "definition": {
+          "entityName": "Ambassador",
+          "schema": { "$ref": "#/backend/entities/Ambassador" },
+          "description": "Stores full ambassador profiles, created by an admin from a user profile."
+        }
+      },
+      {
+        "path": "/ambassadors/{ambassadorId}/clientReferrals/{clientReferralId}",
+        "definition": {
+          "entityName": "ClientReferral",
+          "schema": { "$ref": "#/backend/entities/ClientReferral" },
+          "description": "Stores client referral records for each ambassador."
+        }
+      },
+      {
+        "path": "/ambassadors/{ambassadorId}/payouts/{payoutId}",
+        "definition": {
+          "entityName": "Payout",
+          "schema": { "$ref": "#/backend/entities/Payout" },
+          "description": "Stores payout records for each ambassador."
+        }
+      },
+      {
+        "path": "/ambassadors/{ambassadorId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": { "$ref": "#/backend/entities/Notification" },
+          "description": "Stores notifications for each ambassador."
+        }
+      },
+      {
+        "path": "/news/{newsId}",
+        "definition": {
+          "entityName": "News",
+          "schema": { "$ref": "#/backend/entities/News" },
+          "description": "Stores news and announcements for all ambassadors."
+        }
+      },
+      {
+        "path": "/supportMessages/{messageId}",
+        "definition": {
+          "entityName": "SupportMessage",
+          "schema": { "$ref": "#/backend/entities/SupportMessage" },
+          "description": "Stores support messages from all users."
+        }
+      }
+    ]
+  }
+}
+
+    

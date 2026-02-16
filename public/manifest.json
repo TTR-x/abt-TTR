@@ -1,0 +1,26 @@
+{
+  "name": "Ambassadeur TTR",
+  "short_name": "TTR Ambassadeur",
+  "description": "Devenez ambassadeur TTR et gagnez de l'argent en ligne en promouvant notre application.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#182A59",
+  "theme_color": "#182A59",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo2.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo2.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

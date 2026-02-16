@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 210 17% 98%; /* Light Grey */
+    --foreground: 224 71% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+
+    --primary: 222 64% 33%; /* Deep Indigo */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 215 28% 95%;
+    --secondary-foreground: 224 71% 4%;
+
+    --muted: 220 13% 91%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 25 95% 53%; /* Vibrant Orange */
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 222 64% 33%;
+
+    --chart-1: 222 64% 33%;
+    --chart-2: 25 95% 53%;
+    --chart-3: 173 58% 39%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    
+    /* Light theme sidebar colors */
+    --sidebar-background: 215 28% 97%;
+    --sidebar-foreground: 224 71% 4%;
+    --sidebar-primary: 222 64% 33%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 215 20% 90%;
+    --sidebar-accent-foreground: 224 71% 4%;
+    --sidebar-border: 220 13% 88%;
+    --sidebar-ring: 222 64% 33%;
+  }
+  .dark {
+    --background: 224 71% 4%; /* Deep Indigo */
+    --foreground: 210 40% 98%;
+
+    --card: 224 71% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 224 71% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 25 95% 53%; /* Vibrant Orange */
+    --primary-foreground: 224 71% 4%;
+
+    --secondary: 224 71% 12%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 224 71% 12%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 210 40% 98%; /* Light text color as accent */
+    --accent-foreground: 224 71% 4%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 224 71% 12%;
+    --input: 224 71% 12%;
+    --ring: 25 95% 53%;
+
+    --chart-1: 210 40% 98%;
+    --chart-2: 25 95% 53%;
+    --chart-3: 173 58% 39%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    
+    /* Dark theme sidebar colors */
+    --sidebar-background: 224 71% 2%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary-foreground: 224 71% 4%;
+    --sidebar-accent: 224 71% 10%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 224 71% 10%;
+    --sidebar-ring: 25 95% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Brand Loading Indicator Animation */
+@layer components {
+  .dot {
+    transform-origin: 50% 50%;
+    animation: spin 2s linear infinite;
+  }
+  .dot-1 { fill: hsl(var(--chart-1)); animation-delay: -0.2s; }
+  .dot-2 { fill: hsl(var(--chart-2)); animation-delay: -0.4s; }
+  .dot-3 { fill: hsl(var(--chart-3)); animation-delay: -0.6s; }
+  .dot-4 { fill: hsl(var(--chart-4)); animation-delay: -0.8s; }
+  .dot-5 { fill: hsl(var(--chart-5)); animation-delay: -1.0s; }
+
+  @keyframes spin {
+    0%, 100% {
+      transform: translateY(0) scale(0.8);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: translateY(20px) scale(1.2);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+}
