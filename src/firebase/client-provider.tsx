@@ -15,6 +15,10 @@ interface FirebaseClientProviderProps {
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   // Memoize the initialization of Firebase services to prevent re-initialization on re-renders.
   const firebaseServices = useMemo(() => {
+
+    console.log('[FirebaseClientProvider] Init... Env Key present:', !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+    console.log('[FirebaseClientProvider] Key length:', process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length);
+
     // We pass the config explicitly to avoid issues with build-time vs run-time env vars
     const config = {
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
