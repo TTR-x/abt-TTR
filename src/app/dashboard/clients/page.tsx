@@ -108,7 +108,7 @@ export default function ClientsPage() {
                   return (
                     <TableRow key={client.id}>
                       <TableCell>
-                        <div className="font-medium">{displayName}</div>
+                        <div className="font-medium text-blue-600 dark:text-blue-400">{displayName}</div>
                       </TableCell>
                       <TableCell>
                         <Badge
