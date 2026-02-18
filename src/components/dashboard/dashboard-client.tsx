@@ -304,7 +304,7 @@ export default function DashboardClient({ ambassador, clients, stats, conversion
             </div>
             <div>
               <h3 className="font-semibold text-lg">Invitez un ami ambassadeur</h3>
-              <p className="text-sm text-muted-foreground">Et gagnez <span className="font-bold text-primary">10 jetons</span> lorsqu'il est vérifié.</p>
+              <p className="text-sm text-muted-foreground">Gagnez <span className="font-bold text-primary">10 points</span> (niveau) et <span className="font-bold text-primary">100 FCFA</span> (crédités après vérification) lorsqu'il s'inscrit.</p>
             </div>
           </div>
           {ambassador.level < 2 ? (

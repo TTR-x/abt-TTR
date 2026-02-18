@@ -101,7 +101,7 @@ export default function DashboardPage() {
     totalClients: safeClients.length,
     activeClients: safeClients.filter(client => client.isActive).length,
     pendingClients: safeClients.filter(client => !client.isActive).length,
-    pendingMonoyi: safeClients.filter(client => !client.isActive).length * 10, // 10 MYI per pending signup
+    pendingMonoyi: safeClients.filter(client => !client.isActive).length * (100 / 800), // 100 FCFA = 0.125 MYI per signup
     pointsThisMonth,
     conversionRateDiff,
   };
