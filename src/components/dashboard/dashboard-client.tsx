@@ -226,7 +226,7 @@ export default function DashboardClient({ ambassador, clients, stats, conversion
                   clients.slice(0, 5).map((client) => (
                     <TableRow key={client.id}>
                       <TableCell className="py-2">
-                        <div className="font-medium text-xs sm:text-sm">{`Client ${client.clientId.substring(0, 8)}...`}</div>
+                        <div className="font-medium text-xs sm:text-sm">{client.name}</div>
                       </TableCell>
                       <TableCell className="py-2">
                         <Badge variant={client.status === 'active' ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${client.status === 'active' ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700' : 'bg-gray-100 text-gray-800 border-gray-200'}`}>

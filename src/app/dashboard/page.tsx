@@ -108,13 +108,20 @@ export default function DashboardPage() {
   const conversionRate = stats.totalClients > 0 ? (stats.activeClients / stats.totalClients) * 100 : 0;
 
   // Manually add mock properties to clients for display purposes for now
-  const displayClients = safeClients.map(c => ({
-    ...c,
-    name: `Client ${c.clientId.substring(0, 4)}`,
-    signupDate: new Date(c.referralDate).toLocaleDateString('fr-FR'),
-    status: c.isActive ? 'active' : 'inactive',
-    commission: c.commissionEarned,
-  }))
+  const displayClients = safeClients.map(c => {
+    // Si on a un nom (pour les nouveaux inscrits via webhook), on prend les 3 premières lettres
+    // Sinon on prend les 3 premières de l'ID
+    const baseName = c.name || c.clientId;
+    const shortName = baseName.substring(0, 3).toLowerCase();
+
+    return {
+      ...c,
+      name: `client-${shortName}...`,
+      signupDate: new Date(c.referralDate).toLocaleDateString('fr-FR'),
+      status: c.isActive ? 'active' : 'inactive',
+      commission: c.commissionEarned,
+    };
+  })
 
 
   return <DashboardClient ambassador={finalAmbassador} clients={displayClients} stats={stats} conversionRate={conversionRate} />

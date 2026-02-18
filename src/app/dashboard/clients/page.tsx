@@ -41,13 +41,13 @@ export default function ClientsPage() {
   const filteredClients = (clients || []).filter(client =>
     client.clientId.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   if (isUserLoading) {
-      return (
-          <div className="flex items-center justify-center h-full">
-              <LoadingIndicator />
-          </div>
-      );
+    return (
+      <div className="flex items-center justify-center h-full">
+        <LoadingIndicator />
+      </div>
+    );
   }
 
   return (
@@ -69,13 +69,13 @@ export default function ClientsPage() {
           </CardDescription>
           <div className="flex items-center gap-2 pt-4">
             <div className="relative w-full max-w-sm">
-                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                 <Input 
-                    placeholder="Rechercher par ID client..." 
-                    className="pl-8" 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                 />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un client..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </div>
         </CardHeader>
@@ -86,7 +86,7 @@ export default function ClientsPage() {
                 <TableHead>Client ID</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Date d'inscription</TableHead>
-                <TableHead className="text-right">Commission (Points)</TableHead>
+                <TableHead className="text-right">Commission (Monoyi / FCFA)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -100,34 +100,43 @@ export default function ClientsPage() {
                   </TableRow>
                 ))
               ) : filteredClients.length > 0 ? (
-                filteredClients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell>
-                      <div className="font-medium">{`Client ${client.clientId.substring(0, 8)}...`}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={client.isActive ? "default" : "secondary"}
-                        className={
-                          client.isActive
-                            ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700"
-                            : "bg-gray-100 text-gray-800 border-gray-200"
-                        }
-                      >
-                        {client.isActive ? "Actif" : "Inscrit"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(client.referralDate).toLocaleDateString('fr-FR')}</TableCell>
-                    <TableCell className="text-right">
-                      {client.commissionEarned}
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredClients.map((client) => {
+                  const baseName = client.name || client.clientId;
+                  const shortName = baseName.substring(0, 3).toLowerCase();
+                  const displayName = `client-${shortName}...`;
+
+                  return (
+                    <TableRow key={client.id}>
+                      <TableCell>
+                        <div className="font-medium">{displayName}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={client.isActive ? "default" : "secondary"}
+                          className={
+                            client.isActive
+                              ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700"
+                              : "bg-gray-100 text-gray-800 border-gray-200"
+                          }
+                        >
+                          {client.isActive ? "Actif" : "Inscrit"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(client.referralDate).toLocaleDateString('fr-FR')}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-col items-end">
+                          <span className="font-bold">{(client.commissionEarned || 0).toFixed(2)} MYI</span>
+                          <span className="text-xs text-muted-foreground">{((client.commissionEarned || 0) * 800).toLocaleString('fr-FR')} FCFA</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                        Aucun client trouvé.
-                    </TableCell>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    Aucun client trouvé.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
