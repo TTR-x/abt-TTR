@@ -9,13 +9,17 @@ export interface Ambassador {
   referralCode: string;
   referralLink: string;
   level: number;
-  monoyi: number; 
+  monoyi: number;
   pointsToNextLevel: number;
   avatarUrl: string;
   isVerified?: boolean;
   lastNewsView?: string; // ISO string timestamp
   verificationStatus?: 'not_verified' | 'pending' | 'verified' | 'rejected';
   createdAt?: string; // ISO string timestamp for registration
+  country?: string;
+  dob?: string;
+  payoutMethod?: string;
+  feedback?: string;
 }
 
 // Nouvelle entité pour les utilisateurs de base
@@ -34,7 +38,7 @@ export interface ReferredClient {
   isActive: boolean;
   commissionEarned: number; // Reste en points pour le moment, la conversion se fait à l'attribution
   // The following fields might not be in the DB but can be joined/looked up if needed
-  name?: string; 
+  name?: string;
   signupDate?: string;
   status?: 'active' | 'inactive';
   commission?: number;
@@ -69,14 +73,13 @@ export interface Notification {
 }
 
 export interface SupportMessage {
-    id: string;
-    userId: string;
-    name: string;
-    email: string;
-    subject: string;
-    message: string;
-    date: string;
-    status: 'new' | 'read' | 'archived';
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  date: string;
+  status: 'new' | 'read' | 'archived';
 }
 
-    

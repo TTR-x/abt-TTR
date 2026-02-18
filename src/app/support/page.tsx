@@ -54,16 +54,16 @@ const faqItems = [
     answer: "Rien ! L'inscription à notre programme d'affiliation est entièrement gratuite. Nous vous fournissons tous les outils pour commencer à gagner de l'argent en ligne sans aucun investissement de votre part."
   },
   {
-      question: "Qu'est-ce que l'application TTRGESTION pour les commerçants ?",
-      answer: "TTRGESTION est une application mobile simple conçue pour les petits commerçants. Elle fonctionne comme un cahier numérique intelligent pour suivre les ventes, les dépenses, les stocks et calculer automatiquement les bénéfices, sans nécessiter de compétences en comptabilité."
+    question: "Qu'est-ce que l'application TTRGESTION pour les commerçants ?",
+    answer: "TTRGESTION est une application mobile simple conçue pour les petits commerçants. Elle fonctionne comme un cahier numérique intelligent pour suivre les ventes, les dépenses, les stocks et calculer automatiquement les bénéfices, sans nécessiter de compétences en comptabilité."
   },
   {
     question: "Comment puis-je suivre mes commissions et mes parrainages ?",
     answer: "Votre tableau de bord personnel est votre centre de commande pour votre travail en ligne. Vous y trouverez des statistiques détaillées sur le nombre d'inscriptions, les clients actifs, et le montant total de vos commissions."
   },
   {
-      question: "TTRGESTION est-elle une banque ou stocke-t-elle de l'argent ?",
-      answer: "Non, TTRGESTION n'est pas une banque et ne stocke pas d'argent. C'est un outil de gestion purement destiné à aider les commerçants à mieux suivre leur activité commerciale pour optimiser leurs revenus."
+    question: "TTRGESTION est-elle une banque ou stocke-t-elle de l'argent ?",
+    answer: "Non, TTRGESTION n'est pas une banque et ne stocke pas d'argent. C'est un outil de gestion purement destiné à aider les commerçants à mieux suivre leur activité commerciale pour optimiser leurs revenus."
   },
   {
     question: "Dans quels pays ce travail en ligne est-il disponible ?",
@@ -75,7 +75,7 @@ export default function SupportPage() {
   const { user, isUserLoading } = useUser();
   const [state, formAction] = useFormState(sendSupportMessage, null);
   const [isClient, setIsClient] = useState(false);
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -88,15 +88,15 @@ export default function SupportPage() {
           <span className="font-semibold text-foreground">TTR GESTION</span>
         </LoadingLink>
         <nav className="hidden md:flex flex-1 justify-center gap-6">
-            <LoadingLink href="/mission" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Mission
-            </LoadingLink>
-            <LoadingLink href="/vision" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Vision
-            </LoadingLink>
-            <LoadingLink href="/support" className="text-sm font-medium text-foreground transition-colors">
-              Support & FAQ
-            </LoadingLink>
+          <LoadingLink href="/mission" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Mission
+          </LoadingLink>
+          <LoadingLink href="/vision" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Vision
+          </LoadingLink>
+          <LoadingLink href="/support" className="text-sm font-medium text-foreground transition-colors">
+            Support & FAQ
+          </LoadingLink>
         </nav>
         <div className="ml-auto flex items-center gap-4">
           {isClient && <Suspense fallback={<div className="w-10 h-10" />}><ThemeToggle /></Suspense>}
@@ -135,89 +135,89 @@ export default function SupportPage() {
 
       <main className="flex-1">
         <section className="w-full py-20 md:py-32">
-            <div className="container px-4 md:px-6 max-w-4xl mx-auto">
-              <h1 className="text-4xl font-bold tracking-tighter text-center sm:text-5xl text-primary mb-12">
-                Support & Contact
-              </h1>
+          <div className="container px-4 md:px-6 max-w-4xl mx-auto">
+            <h1 className="text-4xl font-bold tracking-tighter text-center sm:text-5xl text-primary mb-12">
+              Support & Contact
+            </h1>
 
-              <Card>
-                <CardHeader>
-                    <CardTitle>Contactez-nous</CardTitle>
-                    <CardDescription>
-                        Utilisez ce formulaire pour toute question ou demande de support.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isUserLoading ? (
-                        <div className="flex justify-center items-center h-40">
-                            <LoadingIndicator />
-                        </div>
-                    ) : user ? (
-                        <form action={formAction} className="space-y-4">
-                            <input type="hidden" name="userId" value={user.uid} />
-                            <input type="hidden" name="name" value={user.displayName || 'N/A'} />
-                            <input type="hidden" name="email" value={user.email || 'N/A'} />
-                            
-                            <div className="space-y-2">
-                                <Label htmlFor="subject">Sujet</Label>
-                                <Input id="subject" name="subject" placeholder="Ex: Problème avec mon code promo" required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="message">Message</Label>
-                                <Textarea id="message" name="message" placeholder="Décrivez votre problème ou question ici..." required rows={5} />
-                            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Contactez-nous</CardTitle>
+                <CardDescription>
+                  Utilisez ce formulaire pour toute question ou demande de support.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isUserLoading ? (
+                  <div className="flex justify-center items-center h-40">
+                    <LoadingIndicator />
+                  </div>
+                ) : user ? (
+                  <form action={formAction} className="space-y-4">
+                    <input type="hidden" name="userId" value={user.uid} />
+                    <input type="hidden" name="name" value={user.displayName || 'N/A'} />
+                    <input type="hidden" name="email" value={user.email || 'N/A'} />
 
-                            {state?.success && (
-                              <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
-                                <CheckCircle className="h-4 w-4 !text-green-800" />
-                                <AlertTitle>Message envoyé</AlertTitle>
-                                <AlertDescription>{state.success}</AlertDescription>
-                              </Alert>
-                            )}
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Sujet</Label>
+                      <Input id="subject" name="subject" placeholder="Ex: Problème avec mon code promo" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Message</Label>
+                      <Textarea id="message" name="message" placeholder="Décrivez votre problème ou question ici..." required rows={5} />
+                    </div>
 
-                            {state?.error && (
-                              <Alert variant="destructive">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle>Erreur</AlertTitle>
-                                <AlertDescription>{state.error}</AlertDescription>
-                              </Alert>
-                            )}
-
-                            <SubmitButton />
-                        </form>
-                    ) : (
-                        <div className="text-center p-8 border-2 border-dashed rounded-lg">
-                            <h3 className="text-lg font-semibold mb-2">Accès réservé</h3>
-                            <p className="text-muted-foreground mb-4">
-                                Pour contacter le support, vous devez être connecté à votre compte ambassadeur.
-                            </p>
-                            <div className="flex gap-4 justify-center">
-                                <Button asChild>
-                                    <LoadingLink href="/login"><LogIn className="mr-2"/> Se connecter</LoadingLink>
-                                </Button>
-                                <Button asChild variant="secondary">
-                                    <LoadingLink href="/login"><UserPlus className="mr-2"/> Créer un compte</LoadingLink>
-                                </Button>
-                            </div>
-                        </div>
+                    {state?.success && (
+                      <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
+                        <CheckCircle className="h-4 w-4 !text-green-800" />
+                        <AlertTitle>Message envoyé</AlertTitle>
+                        <AlertDescription>{state.success}</AlertDescription>
+                      </Alert>
                     )}
-                </CardContent>
-              </Card>
 
-              <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl text-primary mt-20 mb-12">
-                Questions Fréquemment Posées
-              </h2>
-              <Accordion type="single" collapsible className="w-full">
-                {faqItems.map((item, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-lg font-semibold text-left hover:no-underline">{item.question}</AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground pt-2 text-base">
-                      {item.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
+                    {state?.error && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Erreur</AlertTitle>
+                        <AlertDescription>{state.error}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <SubmitButton />
+                  </form>
+                ) : (
+                  <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2">Accès réservé</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Pour contacter le support, vous devez être connecté à votre compte ambassadeur.
+                    </p>
+                    <div className="flex gap-4 justify-center">
+                      <Button asChild>
+                        <LoadingLink href="/login"><LogIn className="mr-2" /> Se connecter</LoadingLink>
+                      </Button>
+                      <Button asChild variant="secondary">
+                        <LoadingLink href="/register"><UserPlus className="mr-2" /> Créer un compte</LoadingLink>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl text-primary mt-20 mb-12">
+              Questions Fréquemment Posées
+            </h2>
+            <Accordion type="single" collapsible className="w-full">
+              {faqItems.map((item, index) => (
+                <AccordionItem key={index} value={`item-${index}`}>
+                  <AccordionTrigger className="text-lg font-semibold text-left hover:no-underline">{item.question}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground pt-2 text-base">
+                    {item.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
         </section>
       </main>
 

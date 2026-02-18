@@ -5,149 +5,170 @@ import { getAdminServices } from '@/firebase/server-admin';
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from 'next/navigation';
-import { WriteBatch, setDoc as adminSetDoc, doc as adminDoc, updateDoc as adminUpdateDoc, deleteDoc, getDocs, getDoc, collection, query, where } from 'firebase-admin/firestore';
-import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { WriteBatch } from 'firebase-admin/firestore';
 
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+
+function generateRandomSuffix(length = 4): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function buildPromoCode(name: string): string {
+  const clean = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z]/g, '')
+    .toUpperCase();
+  const prefix = clean.length >= 2 ? clean.substring(0, 4) : 'AMB';
+  return `${prefix}${generateRandomSuffix(4)}`;
+}
+
+// ─────────────────────────────────────────────
+// SIGNUP
+// ─────────────────────────────────────────────
 
 export async function signupUser(previousState: any, formData: FormData) {
   const { firestore, auth: adminAuth } = getAdminServices();
 
   if (!firestore || !adminAuth) {
-    return { error: "Les services d'authentification ou de base de données ne sont pas initialisés." };
+    return {
+      error: "Erreur serveur : Firebase n'est pas initialisé. Vérifiez les variables d'environnement et redémarrez le serveur."
+    };
   }
 
-  const name = formData.get('name') as string;
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  const name = (formData.get('name') as string)?.trim();
+  const email = (formData.get('email') as string)?.trim();
+  const password = (formData.get('password') as string);
 
   if (!name || !email || !password) {
     return { error: 'Nom, email et mot de passe sont obligatoires.' };
   }
+  if (password.length < 6) {
+    return { error: 'Le mot de passe doit contenir au moins 6 caractères.' };
+  }
+
+  let uid: string;
 
   try {
-    // 1. Créer l'utilisateur dans Firebase Auth
-    const userRecord = await adminAuth.createUser({
-      email: email,
-      password: password,
-      displayName: name,
-    });
+    // 1. Créer l'utilisateur Firebase Auth
+    const userRecord = await adminAuth.createUser({ email, password, displayName: name });
+    uid = userRecord.uid;
+  } catch (authError: any) {
+    if (authError.code === 'auth/email-already-exists') {
+      return { error: 'Cet email est déjà utilisé.' };
+    }
+    if (authError.code === 'auth/weak-password') {
+      return { error: 'Le mot de passe doit contenir au moins 6 caractères.' };
+    }
+    console.error('[signupUser] Erreur Auth:', authError);
+    return { error: `Erreur lors de la création du compte : ${authError.message}` };
+  }
 
-    const uid = userRecord.uid;
+  try {
+    // 2. Générer un code promo unique — API Admin : firestore.collection().where().get()
+    const ambassadorsCol = firestore.collection('ambassadors');
 
-    // ---- Logique de génération de code promo automatique AMÉLIORÉE ----
-    const generateRandomSuffix = (length: number = 4): string => {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let result = '';
-      for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
+    const isCodeUnique = async (code: string): Promise<boolean> => {
+      const snap = await ambassadorsCol.where('referralCode', '==', code).get();
+      return snap.empty;
     };
 
-    const generatePromoCode = (name: string, uid: string): string => {
-      // Nettoyer le nom : enlever accents, caractères spéciaux, espaces
-      const cleanName = name
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Enlever les accents
-        .replace(/[^a-zA-Z]/g, '') // Garder seulement les lettres
-        .toUpperCase();
-
-      // Prendre les 3-4 premières lettres du nom
-      const namePrefix = cleanName.substring(0, Math.min(4, cleanName.length));
-
-      // Si le nom est vide ou trop court, utiliser "AMB"
-      const prefix = namePrefix.length >= 2 ? namePrefix : 'AMB';
-
-      // Générer un suffixe aléatoire de 4 caractères
-      const suffix = generateRandomSuffix(4);
-
-      return `${prefix}${suffix}`;
-    };
-
-    // Générer un code promo unique avec retry
     let promoCode = '';
-    let attempts = 0;
-    const maxAttempts = 5;
-    const ambassadorsRef = collection(firestore, 'ambassadors');
 
-    while (attempts < maxAttempts) {
-      promoCode = generatePromoCode(name, uid);
-
-      // Vérifier si le code existe déjà
-      const q = query(ambassadorsRef, where('referralCode', '==', promoCode));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        // Code unique trouvé !
+    // Tentatives principales
+    for (let i = 0; i < 10; i++) {
+      const candidate = buildPromoCode(name);
+      if (await isCodeUnique(candidate)) {
+        promoCode = candidate;
         break;
       }
-
-      attempts++;
+      console.log(`[signupUser] Collision code promo (tentative ${i + 1})`);
     }
 
-    // Fallback si tous les essais ont échoué (très improbable)
-    if (attempts >= maxAttempts) {
-      const timestamp = Date.now().toString().slice(-6);
-      promoCode = `AMB${timestamp}`;
-      console.warn(`Fallback promo code used for user ${uid}: ${promoCode}`);
+    // Fallback timestamp
+    if (!promoCode) {
+      for (let i = 0; i < 5; i++) {
+        const ts = Date.now().toString().slice(-6);
+        const candidate = `AMB${ts}${generateRandomSuffix(2)}`;
+        if (await isCodeUnique(candidate)) {
+          promoCode = candidate;
+          console.warn(`[signupUser] Fallback timestamp utilisé: ${promoCode}`);
+          break;
+        }
+        await new Promise(r => setTimeout(r, 1));
+      }
+    }
+
+    // Dernier recours : UID
+    if (!promoCode) {
+      promoCode = `AMB${uid.substring(0, 8).toUpperCase()}`;
+      console.error(`[signupUser] Fallback UID utilisé: ${promoCode}`);
     }
 
     const referralLink = `https://ttrgestion.com/?ref=${promoCode}`;
-    console.log(`Generated promo code for ${name}: ${promoCode}`);
-    // ---- Fin de la logique ----
 
-    // 2. Préparer les documents pour Firestore
-    const userProfile = {
+    // 3. Écriture atomique dans Firestore
+    const batch = firestore.batch();
+    batch.set(firestore.collection('users').doc(uid), {
       id: uid,
-      name: name,
-      email: email,
+      name,
+      email,
       createdAt: new Date().toISOString(),
       isAmbassador: true,
-    };
-
-    const ambassadorProfile = {
+    });
+    batch.set(ambassadorsCol.doc(uid), {
       id: uid,
-      name: name,
-      email: email,
+      name,
+      email,
       role: 'ambassadeur',
       level: 1,
       monoyi: 0,
       referralCode: promoCode,
-      referralLink: referralLink,
+      referralLink,
       avatarUrl: `https://picsum.photos/seed/${uid}/40/40`,
       verificationStatus: 'not_verified',
       isVerified: false,
       createdAt: new Date().toISOString(),
-    };
-
-    // 3. Écrire les documents dans un batch
-    const batch = firestore.batch();
-    const userDocRef = adminDoc(firestore, 'users', uid);
-    const ambassadorDocRef = adminDoc(firestore, 'ambassadors', uid);
-
-    batch.set(userDocRef, userProfile);
-    batch.set(ambassadorDocRef, ambassadorProfile);
+    });
 
     await batch.commit();
+    console.log(`[signupUser] ✅ Inscription réussie pour ${name} — code: ${promoCode}`);
 
     return { success: true };
 
-  } catch (authError: any) {
-    if (authError.code === 'auth/email-already-exists') {
-      return { error: 'Cet email est déjà utilisé.' };
-    } else if (authError.code === 'auth/weak-password') {
-      return { error: 'Le mot de passe doit contenir au moins 6 caractères.' };
+  } catch (error: any) {
+    // Si l'écriture Firestore échoue, supprimer l'utilisateur Auth pour éviter un état incohérent
+    console.error('[signupUser] Erreur Firestore:', error);
+    try {
+      await adminAuth.deleteUser(uid);
+      console.warn(`[signupUser] Utilisateur Auth ${uid} supprimé suite à l'échec Firestore.`);
+    } catch (deleteErr) {
+      console.error('[signupUser] Impossible de supprimer l\'utilisateur Auth:', deleteErr);
     }
-    console.error("Erreur détaillée d'inscription (serveur):", authError);
-    return { error: `La création du profil a échoué. Erreur: ${authError.message}` };
+    return { error: `Erreur lors de la création du profil : ${error.message}` };
   }
 }
 
+
+// ─────────────────────────────────────────────
+// LOGOUT
+// ─────────────────────────────────────────────
 
 export async function logout() {
   cookies().delete('firebase-auth');
   revalidatePath('/');
 }
+
+// ─────────────────────────────────────────────
+// COMPLETE REGISTRATION
+// ─────────────────────────────────────────────
 
 export async function completeRegistration(previousState: any, formData: FormData) {
   const { firestore } = getAdminServices();
@@ -169,226 +190,179 @@ export async function completeRegistration(previousState: any, formData: FormDat
   }
 
   try {
-    const ambassadorDocRef = adminDoc(firestore, 'ambassadors', uid);
-
-    const updateData: { [key: string]: any } = {
-      country: country,
-      payoutMethod: payoutMethod,
-      feedback: feedback,
+    const updateData: Record<string, any> = {
+      country,
+      payoutMethod,
+      feedback,
       dob: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
     };
+    if (referralCode) updateData.referredBy = referralCode;
 
-    if (referralCode) {
-      updateData.referredBy = referralCode;
-    }
-
-    await adminUpdateDoc(ambassadorDocRef, updateData);
-
+    await firestore.collection('ambassadors').doc(uid).update(updateData);
     revalidatePath('/dashboard');
-
   } catch (error: any) {
-    console.error('Error completing registration:', error);
+    console.error('[completeRegistration] Erreur:', error);
     return { error: `Une erreur est survenue: ${error.message}` };
   }
 
   redirect('/dashboard');
 }
 
+// ─────────────────────────────────────────────
+// GENERATE & ASSIGN PROMO CODE
+// ─────────────────────────────────────────────
+
 export async function generateAndAssignPromoCode(ambassadorId: string) {
   const { firestore } = getAdminServices();
-  if (!firestore) {
-    return { error: "La base de données n'est pas initialisée." };
-  }
-
-  if (!ambassadorId) {
-    return { error: "L'ID de l'ambassadeur est manquant." };
-  }
+  if (!firestore) return { error: "La base de données n'est pas initialisée." };
+  if (!ambassadorId) return { error: "L'ID de l'ambassadeur est manquant." };
 
   try {
-    const ambassadorRef = adminDoc(firestore, 'ambassadors', ambassadorId);
-    const ambassadorSnap = await getDoc(ambassadorRef);
+    const ambassadorRef = firestore.collection('ambassadors').doc(ambassadorId);
+    const ambassadorSnap = await ambassadorRef.get();
 
-    if (!ambassadorSnap.exists()) {
-      return { error: "Ambassadeur non trouvé." };
+    if (!ambassadorSnap.exists) return { error: "Ambassadeur non trouvé." };
+
+    const name = ambassadorSnap.data()?.name;
+    if (!name) return { error: "Le nom de l'ambassadeur est nécessaire pour générer un code." };
+
+    let code = buildPromoCode(name);
+    const snap = await firestore.collection('ambassadors').where('referralCode', '==', code).get();
+    if (!snap.empty) {
+      code = `${code}${generateRandomSuffix(2)}`;
     }
 
-    const ambassadorData = ambassadorSnap.data();
-    const name = ambassadorData?.name;
-    if (!name) {
-      return { error: "Le nom de l'ambassadeur est nécessaire pour générer un code." };
-    }
-
-    // ---- Logique de génération de code promo ----
-    let basePromoCode = name.toLowerCase().replace(/[^a-z]/g, '').substring(0, 4) + ambassadorId.slice(-3);
-    if (basePromoCode.length < 4) {
-      basePromoCode = 'user' + ambassadorId.slice(-3);
-    }
-
-    // Plan de secours : Vérifier si le code existe
-    const ambassadorsRef = collection(firestore, 'ambassadors');
-    let q = query(ambassadorsRef, where('referralCode', '==', basePromoCode));
-    let querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      // Le code existe déjà, ajoutons un chiffre aléatoire
-      basePromoCode = `${basePromoCode}${Math.floor(Math.random() * 10)}`;
-      q = query(ambassadorsRef, where('referralCode', '==', basePromoCode));
-      querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        basePromoCode = `${basePromoCode}${Math.floor(Math.random() * 10)}`;
-      }
-    }
-
-    const finalPromoCode = basePromoCode;
-    const referralLink = `https://ttrgestion.com/?ref=${finalPromoCode}`;
-    // ---- Fin de la logique ----
-
-    await adminUpdateDoc(ambassadorRef, {
-      referralCode: finalPromoCode,
-      referralLink: referralLink,
-    });
+    const referralLink = `https://ttrgestion.com/?ref=${code}`;
+    await ambassadorRef.update({ referralCode: code, referralLink });
 
     revalidatePath('/admin/ambassadors');
-    return { success: true, newCode: finalPromoCode };
+    return { success: true, newCode: code };
 
   } catch (error: any) {
-    console.error('Error generating promo code:', error);
-    return { error: `Une erreur est survenue lors de la génération du code: ${error.message}` };
+    console.error('[generateAndAssignPromoCode] Erreur:', error);
+    return { error: `Erreur lors de la génération du code: ${error.message}` };
   }
 }
 
+// ─────────────────────────────────────────────
+// UPDATE PROMO CODE
+// ─────────────────────────────────────────────
 
 export async function updatePromoCode(uid: string, newCode: string) {
   const { firestore } = getAdminServices();
-  if (!firestore) {
-    return { error: "La base de données n'est pas initialisée." };
-  }
-
-  if (!uid || !newCode) {
-    return { error: 'Informations utilisateur ou nouveau code manquants.' };
-  }
-
+  if (!firestore) return { error: "La base de données n'est pas initialisée." };
+  if (!uid || !newCode) return { error: 'Informations utilisateur ou nouveau code manquants.' };
   if (newCode.length < 4 || newCode.length > 8) {
     return { error: 'Le nouveau code doit contenir entre 4 et 8 caractères.' };
   }
 
-  // Vérifier si le code existe déjà
-  const ambassadorsRef = collection(firestore, 'ambassadors');
-  const q = query(ambassadorsRef, where('referralCode', '==', newCode));
-  const querySnapshot = await getDocs(q);
-
-  if (!querySnapshot.empty && querySnapshot.docs.some(doc => doc.id !== uid)) {
-    return { error: 'Ce code promo est déjà utilisé par un autre ambassadeur.' };
-  }
-
-
   try {
-    const referralLink = `https://ttrgestion.com/?ref=${newCode}`;
+    const snap = await firestore.collection('ambassadors').where('referralCode', '==', newCode).get();
+    if (!snap.empty && snap.docs.some(d => d.id !== uid)) {
+      return { error: 'Ce code promo est déjà utilisé par un autre ambassadeur.' };
+    }
 
-    await adminUpdateDoc(adminDoc(firestore, 'ambassadors', uid), {
-      referralCode: newCode,
-      referralLink: referralLink,
-    });
+    const referralLink = `https://ttrgestion.com/?ref=${newCode}`;
+    await firestore.collection('ambassadors').doc(uid).update({ referralCode: newCode, referralLink });
 
     revalidatePath('/admin/ambassadors');
     return { success: true, newCode };
 
   } catch (error: any) {
-    console.error('Error updating promo code:', error);
-    return { error: `Une erreur est survenue lors de la mise à jour du code: ${error.message}` };
+    console.error('[updatePromoCode] Erreur:', error);
+    return { error: `Erreur lors de la mise à jour du code: ${error.message}` };
   }
 }
 
+// ─────────────────────────────────────────────
+// SEND NOTIFICATION TO ALL
+// ─────────────────────────────────────────────
+
 export async function sendNotificationToAll(previousState: any, formData: FormData) {
   const { firestore } = getAdminServices();
-  if (!firestore) {
-    return { error: "La base de données n'est pas initialisée." };
-  }
+  if (!firestore) return { error: "La base de données n'est pas initialisée." };
 
   const title = formData.get('title') as string;
   const message = formData.get('message') as string;
   const link = formData.get('link') as string | undefined;
 
-  if (!title || !message) {
-    return { error: 'Le titre et le message sont obligatoires.' };
-  }
+  if (!title || !message) return { error: 'Le titre et le message sont obligatoires.' };
 
   try {
     const ambassadorsSnapshot = await firestore.collection('ambassadors').get();
-    if (ambassadorsSnapshot.empty) {
-      return { error: 'Aucun ambassadeur trouvé.' };
-    }
+    if (ambassadorsSnapshot.empty) return { error: 'Aucun ambassadeur trouvé.' };
 
     const batches: WriteBatch[] = [];
     let currentBatch = firestore.batch();
-    let operationCount = 0;
+    let count = 0;
 
     ambassadorsSnapshot.docs.forEach((ambassadorDoc) => {
-      const notificationData = {
-        title,
-        message,
+      const notifRef = firestore
+        .collection('ambassadors')
+        .doc(ambassadorDoc.id)
+        .collection('notifications')
+        .doc();
+
+      currentBatch.set(notifRef, {
+        title, message,
         link: link || '',
         date: new Date().toISOString(),
         isRead: false,
-      };
+      });
+      count++;
 
-      const notificationRef = firestore.collection('ambassadors').doc(ambassadorDoc.id).collection('notifications').doc();
-      currentBatch.set(notificationRef, notificationData);
-      operationCount++;
-
-      if (operationCount === 499) {
+      if (count === 499) {
         batches.push(currentBatch);
         currentBatch = firestore.batch();
-        operationCount = 0;
+        count = 0;
       }
     });
 
-    if (operationCount > 0) {
-      batches.push(currentBatch);
-    }
-
-    await Promise.all(batches.map(batch => batch.commit()));
+    if (count > 0) batches.push(currentBatch);
+    await Promise.all(batches.map(b => b.commit()));
 
     return { success: `Notification envoyée à ${ambassadorsSnapshot.size} ambassadeurs.` };
 
   } catch (error: any) {
-    console.error('Error sending notifications:', error);
-    return { error: `Une erreur est survenue lors de l'envoi: ${error.message}` };
+    console.error('[sendNotificationToAll] Erreur:', error);
+    return { error: `Erreur lors de l'envoi: ${error.message}` };
   }
 }
 
+// ─────────────────────────────────────────────
+// SEND NOTIFICATION TO USER
+// ─────────────────────────────────────────────
 
 export async function sendNotificationToUser(userId: string, title: string, message: string, link: string) {
   const { firestore } = getAdminServices();
-  if (!firestore) {
-    return { error: "La base de données n'est pas initialisée." };
-  }
-
-  if (!userId || !title || !message) {
-    return { error: 'ID utilisateur, titre et message sont obligatoires.' };
-  }
+  if (!firestore) return { error: "La base de données n'est pas initialisée." };
+  if (!userId || !title || !message) return { error: 'ID utilisateur, titre et message sont obligatoires.' };
 
   try {
-    const notificationData = {
-      title,
-      message,
-      link: link || '',
-      date: new Date().toISOString(),
-      isRead: false,
-    };
-    await firestore.collection('ambassadors').doc(userId).collection('notifications').add(notificationData);
+    await firestore
+      .collection('ambassadors')
+      .doc(userId)
+      .collection('notifications')
+      .add({
+        title, message,
+        link: link || '',
+        date: new Date().toISOString(),
+        isRead: false,
+      });
     return { success: true };
   } catch (error: any) {
-    console.error('Error sending single notification:', error);
-    return { error: `Une erreur est survenue lors de l'envoi : ${error.message}` };
+    console.error('[sendNotificationToUser] Erreur:', error);
+    return { error: `Erreur lors de l'envoi : ${error.message}` };
   }
 }
 
+// ─────────────────────────────────────────────
+// SEND SUPPORT MESSAGE
+// ─────────────────────────────────────────────
+
 export async function sendSupportMessage(previousState: any, formData: FormData) {
   const { firestore } = getAdminServices();
-  if (!firestore) {
-    return { error: "La base de données n'est pas initialisée." };
-  }
+  if (!firestore) return { error: "La base de données n'est pas initialisée." };
 
   const userId = formData.get('userId') as string;
   const name = formData.get('name') as string;
@@ -401,22 +375,14 @@ export async function sendSupportMessage(previousState: any, formData: FormData)
   }
 
   try {
-    const supportMessageData = {
-      userId,
-      name,
-      email,
-      subject,
-      message,
+    await firestore.collection('supportMessages').add({
+      userId, name, email, subject, message,
       date: new Date().toISOString(),
       status: 'new',
-    };
-
-    await firestore.collection('supportMessages').add(supportMessageData);
-
+    });
     return { success: 'Votre message a été envoyé avec succès. Notre équipe vous répondra bientôt.' };
   } catch (error: any) {
-    console.error('Error sending support message:', error);
-    return { error: `Une erreur est survenue lors de l'envoi de votre message: ${error.message}` };
+    console.error('[sendSupportMessage] Erreur:', error);
+    return { error: `Erreur lors de l'envoi de votre message: ${error.message}` };
   }
 }
-

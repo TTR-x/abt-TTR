@@ -69,62 +69,62 @@ export default function AdminPayoutsPage() {
   const { data: ambassadors, isLoading: isLoadingAmbassadors } = useCollection<Ambassador>(ambassadorsRef);
 
   const resetNotificationDialog = () => {
-      setNotifyingAmbassador(null);
-      setNotification({ title: '', message: '', link: '' });
-      setDialogError(null);
+    setNotifyingAmbassador(null);
+    setNotification({ title: '', message: '', link: '' });
+    setDialogError(null);
   }
-  
+
   const handleApprove = async (payout: PayoutWithAmbassador) => {
     if (!firestore) {
-        toast({ variant: "destructive", title: "Erreur", description: "Service Firestore non disponible." });
-        return;
+      toast({ variant: "destructive", title: "Erreur", description: "Service Firestore non disponible." });
+      return;
     }
     setLoadingAction(payout.id);
     try {
-        await runTransaction(firestore, async (transaction) => {
-            const ambassadorDocRef = doc(firestore, 'ambassadors', payout.ambassadorId);
-            const payoutDocRef = doc(firestore, 'ambassadors', payout.ambassadorId, 'payouts', payout.id);
-            
-            const ambassadorDoc = await transaction.get(ambassadorDocRef);
-            if (!ambassadorDoc.exists() || ambassadorDoc.data().monoyi < payout.amount) {
-                throw new Error("Solde Monoyi insuffisant ou ambassadeur introuvable.");
-            }
-            
-            // 1. Mettre à jour l'ambassadeur en déduisant les monoyi
-            transaction.update(ambassadorDocRef, {
-                monoyi: increment(-payout.amount)
-            });
-            
-            // 2. Mettre à jour la demande de retrait
-            transaction.update(payoutDocRef, {
-                status: 'completed',
-                completionDate: new Date().toISOString()
-            });
-        });
-        
-        toast({
-            title: "Approbation réussie !",
-            description: `${payout.amount} Monoyi ont été déduits de ${payout.ambassadorName}.`,
+      await runTransaction(firestore, async (transaction) => {
+        const ambassadorDocRef = doc(firestore, 'ambassadors', payout.ambassadorId);
+        const payoutDocRef = doc(firestore, 'ambassadors', payout.ambassadorId, 'payouts', payout.id);
+
+        const ambassadorDoc = await transaction.get(ambassadorDocRef);
+        if (!ambassadorDoc.exists() || ambassadorDoc.data().monoyi < payout.amount) {
+          throw new Error("Solde Monoyi insuffisant ou ambassadeur introuvable.");
+        }
+
+        // 1. Mettre à jour l'ambassadeur en déduisant les monoyi
+        transaction.update(ambassadorDocRef, {
+          monoyi: increment(-payout.amount)
         });
 
-        // Auto-open notification dialog
-        setNotifyingAmbassador(payout);
-        setNotification({
-          title: "Votre demande de retrait a été traitée",
-          message: `Votre demande de retrait de ${payout.amount} Monoyi a été approuvée et traitée. L'argent a été envoyé.`,
-          link: '/dashboard/earnings'
+        // 2. Mettre à jour la demande de retrait
+        transaction.update(payoutDocRef, {
+          status: 'completed',
+          completionDate: new Date().toISOString()
         });
+      });
+
+      toast({
+        title: "Approbation réussie !",
+        description: `${payout.amount} Monoyi ont été déduits de ${payout.ambassadorName}.`,
+      });
+
+      // Auto-open notification dialog
+      setNotifyingAmbassador(payout);
+      setNotification({
+        title: "Votre demande de retrait a été traitée",
+        message: `Votre demande de retrait de ${payout.amount} Monoyi a été approuvée et traitée. L'argent a été envoyé.`,
+        link: '/dashboard/earnings'
+      });
 
     } catch (error) {
-        console.error("Erreur lors de l'approbation du retrait:", error);
-        const errorMessage = error instanceof Error ? error.message : "Une erreur inconnue est survenue.";
-        toast({
-            variant: "destructive",
-            title: "L'approbation a échoué",
-            description: errorMessage,
-        });
+      console.error("Erreur lors de l'approbation du retrait:", error);
+      const errorMessage = error instanceof Error ? error.message : "Une erreur inconnue est survenue.";
+      toast({
+        variant: "destructive",
+        title: "L'approbation a échoué",
+        description: errorMessage,
+      });
     } finally {
-        setLoadingAction(null);
+      setLoadingAction(null);
     }
   };
 
@@ -138,7 +138,7 @@ export default function AdminPayoutsPage() {
     try {
       const result = await sendNotificationToUser(notifyingAmbassador.ambassadorId, notification.title, notification.message, notification.link);
       if (result.error) throw new Error(result.error);
-      
+
       toast({
         title: "Notification envoyée !",
         description: `La notification a été envoyée à ${notifyingAmbassador.ambassadorName}.`
@@ -166,10 +166,15 @@ export default function AdminPayoutsPage() {
   })).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
 
   const formatDate = (dateString?: string) => {
-      if (!dateString) return "N/A";
-      return new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }
-  const formatCurrency = (amount: number) => amount.toLocaleString('fr-FR') + " MYI";
+  const formatCurrency = (amount: number) => (
+    <div className="flex flex-col">
+      <span className="font-semibold text-primary">{amount.toFixed(2)} MYI</span>
+      <span className="text-[10px] text-muted-foreground">{(amount * 800).toLocaleString('fr-FR')} FCFA</span>
+    </div>
+  );
 
   return (
     <>
@@ -193,7 +198,7 @@ export default function AdminPayoutsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ambassadeur</TableHead>
-                  <TableHead>Montant (Monoyi)</TableHead>
+                  <TableHead>Montant (MYI / FCFA)</TableHead>
                   <TableHead>Méthode</TableHead>
                   <TableHead>Date de demande</TableHead>
                   <TableHead>Statut</TableHead>
@@ -224,8 +229,8 @@ export default function AdminPayoutsPage() {
                       <TableCell>{formatDate(payout.requestDate)}</TableCell>
                       <TableCell>
                         <Badge variant={payout.status === 'completed' ? 'default' : 'secondary'} className={
-                          payout.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                          payout.status === 'completed' ? 'bg-green-100 text-green-800' : ''
+                          payout.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            payout.status === 'completed' ? 'bg-green-100 text-green-800' : ''
                         }>
                           {payout.status === 'pending' && <Clock className="mr-1 h-3 w-3" />}
                           {payout.status === 'completed' && <CheckCircle className="mr-1 h-3 w-3" />}
@@ -235,17 +240,17 @@ export default function AdminPayoutsPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {payout.status === 'pending' && (
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleApprove(payout)}
-                                disabled={loadingAction === payout.id}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleApprove(payout)}
+                              disabled={loadingAction === payout.id}
                             >
                               {loadingAction === payout.id ? <Loader2 className="animate-spin" /> : "Approuver"}
                             </Button>
                           )}
-                           <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setNotifyingAmbassador(payout)}>
-                              <Bell className="h-4 w-4" />
+                          <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setNotifyingAmbassador(payout)}>
+                            <Bell className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -253,9 +258,9 @@ export default function AdminPayoutsPage() {
                   ))
                 ) : (
                   <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
-                          Aucune demande de retrait pour le moment.
-                      </TableCell>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Aucune demande de retrait pour le moment.
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -263,8 +268,8 @@ export default function AdminPayoutsPage() {
           </CardContent>
         </Card>
       </div>
-      
-       {/* Dialog for sending a notification */}
+
+      {/* Dialog for sending a notification */}
       <Dialog open={!!notifyingAmbassador} onOpenChange={(open) => !open && resetNotificationDialog()}>
         <DialogContent>
           <DialogHeader>
@@ -275,43 +280,43 @@ export default function AdminPayoutsPage() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="notifTitle">Titre</Label>
-                <Input
-                    id="notifTitle"
-                    value={notification.title}
-                    onChange={(e) => setNotification({ ...notification, title: e.target.value })}
-                    placeholder="Titre de la notification"
-                />
+              <Label htmlFor="notifTitle">Titre</Label>
+              <Input
+                id="notifTitle"
+                value={notification.title}
+                onChange={(e) => setNotification({ ...notification, title: e.target.value })}
+                placeholder="Titre de la notification"
+              />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="notifMessage">Message</Label>
-                <Textarea
-                    id="notifMessage"
-                    value={notification.message}
-                    onChange={(e) => setNotification({ ...notification, message: e.target.value })}
-                    placeholder="Contenu de la notification..."
-                />
+              <Label htmlFor="notifMessage">Message</Label>
+              <Textarea
+                id="notifMessage"
+                value={notification.message}
+                onChange={(e) => setNotification({ ...notification, message: e.target.value })}
+                placeholder="Contenu de la notification..."
+              />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="notifLink">Lien (Optionnel)</Label>
-                <Input
-                    id="notifLink"
-                    value={notification.link}
-                    onChange={(e) => setNotification({ ...notification, link: e.target.value })}
-                    placeholder="/dashboard/news"
-                />
+              <Label htmlFor="notifLink">Lien (Optionnel)</Label>
+              <Input
+                id="notifLink"
+                value={notification.link}
+                onChange={(e) => setNotification({ ...notification, link: e.target.value })}
+                placeholder="/dashboard/news"
+              />
             </div>
             {dialogError && (
-                <Alert variant="destructive">
-                    <AlertDescription>{dialogError}</AlertDescription>
-                </Alert>
+              <Alert variant="destructive">
+                <AlertDescription>{dialogError}</AlertDescription>
+              </Alert>
             )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={resetNotificationDialog}>Annuler</Button>
             <Button onClick={handleSendNotification} disabled={isSubmitting || !notification.title || !notification.message}>
-                {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-4 w-4" />}
-                Envoyer
+              {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-4 w-4" />}
+              Envoyer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -320,4 +325,3 @@ export default function AdminPayoutsPage() {
   );
 }
 
-    

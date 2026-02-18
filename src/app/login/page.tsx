@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -11,179 +10,38 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Eye, EyeOff, LogIn } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
-import { useEffect, useState, FormEvent, Suspense, useActionState } from "react";
-import { useFormStatus } from 'react-dom';
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, FormEvent, Suspense, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth, useUser } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { signupUser } from "@/app/actions";
+import Link from "next/link";
 
-function PasswordInput({ id, name, required = true }: { id: string, name: string, required?: boolean }) {
-  const [showPassword, setShowPassword] = useState(false);
+function PasswordInput({ id, name }: { id: string; name: string }) {
+  const [show, setShow] = useState(false);
   return (
     <div className="relative">
-      <Input id={id} name={name} type={showPassword ? "text" : "password"} required={required} />
+      <Input id={id} name={name} type={show ? "text" : "password"} required />
       <button
         type="button"
-        onClick={() => setShowPassword(!showPassword)}
-        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+        onClick={() => setShow(!show)}
+        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
       >
-        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
       </button>
     </div>
   );
 }
 
-function LoginTab() {
-    const [error, setError] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const auth = useAuth();
-
-    const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setIsSubmitting(true);
-        setError(null);
-        const formData = new FormData(event.currentTarget);
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-
-        if (!auth) {
-            setError('Service d\'authentification non disponible.');
-            setIsSubmitting(false);
-            return;
-        }
-
-        if (!email || !password) {
-          setError('Veuillez remplir tous les champs.');
-          setIsSubmitting(false);
-          return;
-        }
-
-        try {
-          await signInWithEmailAndPassword(auth, email, password);
-          // La redirection est gérée par le useEffect dans AuthPageContent
-        } catch (error: any) {
-          if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-              setError('Email ou mot de passe incorrect.');
-          } else {
-              setError(`Une erreur est survenue: ${error.message}`);
-          }
-        } finally {
-          setIsSubmitting(false);
-        }
-    };
-    
-    return (
-        <Card className="bg-card text-card-foreground">
-            <CardHeader>
-              <CardTitle className="text-2xl">Connexion</CardTitle>
-              <CardDescription>
-                Entrez vos identifiants pour accéder à votre tableau de bord.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email-login">Email</Label>
-                  <Input id="email-login" type="email" name="email" placeholder="m@example.com" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password-login">Mot de passe</Label>
-                  <PasswordInput id="password-login" name="password" />
-                </div>
-
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? <LoadingIndicator className="h-6 w-6" /> : "Se connecter"}
-                </Button>
-              </form>
-            </CardContent>
-        </Card>
-    );
-}
-
-function SignupSubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? <LoadingIndicator className="h-6 w-6" /> : "Créer un compte"}
-        </Button>
-    )
-}
-
-function SignupTab() {
-    const [state, formAction] = useActionState(signupUser, null);
-
-    if (state?.success) {
-      return (
-        <Card className="bg-card text-card-foreground">
-          <CardContent className="p-6 text-center">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Inscription réussie !</h2>
-            <p className="text-muted-foreground mb-6">
-              Votre code promo a été généré. Connectez-vous maintenant pour commencer votre aventure.
-            </p>
-            <Alert>
-              <AlertDescription>
-                Un email de vérification pourrait vous être envoyé.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      )
-    }
-    
-    return (
-        <Card className="bg-card text-card-foreground">
-            <CardHeader>
-              <CardTitle className="text-2xl">Créer un compte</CardTitle>
-              <CardDescription>
-                Remplissez vos informations pour devenir ambassadeur. Votre code promo sera généré automatiquement.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form action={formAction} className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Nom complet (min 6 caractères)</Label>
-                  <Input id="name" name="name" placeholder="John Doe" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email-signup">Email</Label>
-                  <Input id="email-signup" type="email" name="email" placeholder="m@example.com" required />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="password-signup">Mot de passe (min 6 caractères)</Label>
-                    <PasswordInput id="password-signup" name="password" />
-                </div>
-                
-                {state?.error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{state.error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <SignupSubmitButton />
-              </form>
-            </CardContent>
-          </Card>
-    );
-}
-
-function AuthPageContent() {
+function LoginContent() {
   const router = useRouter();
   const { user: authUser, isUserLoading } = useUser();
-  
+  const auth = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (!isUserLoading && authUser) {
       router.push('/dashboard');
@@ -192,36 +50,123 @@ function AuthPageContent() {
 
   if (isUserLoading || authUser) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <LoadingIndicator />
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingIndicator />
+      </div>
     );
   }
 
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    if (!auth) {
+      setError("Service d'authentification non disponible.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Redirection gérée par le useEffect
+    } catch (err: any) {
+      if (
+        err.code === 'auth/invalid-credential' ||
+        err.code === 'auth/wrong-password' ||
+        err.code === 'auth/user-not-found'
+      ) {
+        setError('Email ou mot de passe incorrect.');
+      } else {
+        setError(`Une erreur est survenue: ${err.message}`);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Tabs defaultValue="login" className="w-full max-w-2xl">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Se connecter</TabsTrigger>
-          <TabsTrigger value="signup">S'inscrire</TabsTrigger>
-        </TabsList>
-        <TabsContent value="login">
-          <LoginTab />
-        </TabsContent>
-        <TabsContent value="signup">
-          <SignupTab />
-        </TabsContent>
-      </Tabs>
+      <div className="w-full max-w-md space-y-4">
+        <Card className="shadow-xl">
+          <CardHeader className="space-y-1 pb-4">
+            <div className="flex justify-center mb-2">
+              <div className="rounded-full bg-primary/10 p-3">
+                <LogIn className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl text-center">Connexion</CardTitle>
+            <CardDescription className="text-center">
+              Entrez vos identifiants pour accéder à votre tableau de bord ambassadeur.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <form onSubmit={handleLogin} className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Adresse email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="jean@exemple.com"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="password">Mot de passe</Label>
+                <PasswordInput id="password" name="password" />
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <LoadingIndicator className="h-5 w-5" />
+                    Connexion...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <LogIn className="h-5 w-5" />
+                    Se connecter
+                  </span>
+                )}
+              </Button>
+
+              <p className="text-center text-sm text-muted-foreground">
+                Pas encore de compte ?{' '}
+                <Link href="/register" className="text-primary font-medium hover:underline">
+                  Créer un compte
+                </Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
 
-export default function AuthPage() {
-    return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingIndicator /></div>}>
-            <AuthPageContent />
-        </Suspense>
-    )
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingIndicator />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
+  );
 }
-
-    
