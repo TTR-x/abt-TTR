@@ -15,9 +15,17 @@ interface FirebaseClientProviderProps {
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   // Memoize the initialization of Firebase services to prevent re-initialization on re-renders.
   const firebaseServices = useMemo(() => {
-    // This function now safely gets the configuration and initializes the app.
-    // If the API key is missing, it will throw an error from `getClientConfig`.
-    return initializeFirebase();
+    // We pass the config explicitly to avoid issues with build-time vs run-time env vars
+    const config = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      measurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+    };
+    return initializeFirebase(config);
   }, []);
 
   return (

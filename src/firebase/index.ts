@@ -1,6 +1,6 @@
 'use client';
 
-import { getApps } from 'firebase/app';
+import { getApps, initializeApp } from 'firebase/app';
 import { getClientConfig, initializeClientApp } from './client-config';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
@@ -19,7 +19,7 @@ export * from './client-provider';
  * Initializes the Firebase client app and returns the SDKs.
  * This is the primary entry point for client-side Firebase access.
  */
-export function initializeFirebase() {
+export function initializeFirebase(config?: any) {
   if (typeof window === 'undefined') {
     // On the server, we don't initialize the client SDKs.
     return {
@@ -29,7 +29,22 @@ export function initializeFirebase() {
     };
   }
 
-  const firebaseApp = initializeClientApp();
+  let firebaseApp;
+
+  if (config && config.apiKey) {
+    if (getApps().length) {
+      firebaseApp = getApps()[0];
+    } else {
+      try {
+        firebaseApp = initializeApp(config);
+      } catch (error) {
+        console.warn("Firebase initialization error, trying getApp:", error);
+        if (getApps().length) firebaseApp = getApps()[0];
+      }
+    }
+  } else {
+    firebaseApp = initializeClientApp();
+  }
 
   if (!firebaseApp) {
     return {
