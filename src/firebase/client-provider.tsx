@@ -19,15 +19,15 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     console.log('[FirebaseClientProvider] Init... Env Key present:', !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
     console.log('[FirebaseClientProvider] Key length:', process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length);
 
-    // We pass the config explicitly to avoid issues with build-time vs run-time env vars
+    // We pass the config explicitly in HARDCODED string to bypass any Env Var issues
     const config = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      measurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+      apiKey: 'AIzaSyCdnxQQiH-7nUfieFVHZnHDQPZkYeay4oE',
+      authDomain: 'studio-7043955860-d5b24.firebaseapp.com',
+      projectId: 'studio-7043955860-d5b24',
+      storageBucket: 'studio-7043955860-d5b24.firebasestorage.app',
+      messagingSenderId: '472528856781',
+      appId: '1:472528856781:web:6ffe63e547439dcdd12b84',
+      measurementId: 'G-REXLH30QKS',
     };
     return initializeFirebase(config);
   }, []);
