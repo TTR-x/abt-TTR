@@ -174,10 +174,10 @@ export default function DashboardClient({ ambassador, clients, stats, conversion
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold flex flex-col">
-              <span>{ambassador.monoyi.toFixed(2)} MYI</span>
-              <span className="text-sm font-normal text-muted-foreground">{(ambassador.monoyi * 800).toLocaleString('fr-FR')} FCFA</span>
+              <span>{(ambassador.monoyi || 0).toFixed(2)} MYI</span>
+              <span className="text-sm font-normal text-muted-foreground">{((ambassador.monoyi || 0) * 800).toLocaleString('fr-FR')} FCFA</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">+{stats.pointsThisMonth.toFixed(2)} Monoyi ce mois-ci</p>
+            <p className="text-xs text-muted-foreground mt-1">+{(stats.pointsThisMonth || 0).toFixed(2)} Monoyi ce mois-ci</p>
           </CardContent>
         </Card>
         <Card>
@@ -196,9 +196,9 @@ export default function DashboardClient({ ambassador, clients, stats, conversion
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{conversionRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{(conversionRate || 0).toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              {stats.conversionRateDiff >= 0 ? '+' : ''}{stats.conversionRateDiff.toFixed(1)}% depuis le mois dernier
+              {stats.conversionRateDiff >= 0 ? '+' : ''}{(stats.conversionRateDiff || 0).toFixed(1)}% depuis le mois dernier
             </p>
           </CardContent>
         </Card>
@@ -234,8 +234,8 @@ export default function DashboardClient({ ambassador, clients, stats, conversion
                       </TableCell>
                       <TableCell className="text-right py-2">
                         <div className="flex flex-col items-end">
-                          <span className="text-xs sm:text-sm font-medium">{client.commissionEarned.toFixed(2)} MYI</span>
-                          <span className="text-[10px] text-muted-foreground">{(client.commissionEarned * 800).toLocaleString('fr-FR')} F</span>
+                          <span className="text-xs sm:text-sm font-medium">{(client.commissionEarned || 0).toFixed(2)} MYI</span>
+                          <span className="text-[10px] text-muted-foreground">{((client.commissionEarned || 0) * 800).toLocaleString('fr-FR')} F</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right py-2 text-xs text-muted-foreground hidden sm:table-cell">{new Date(client.referralDate).toLocaleDateString('fr-FR')}</TableCell>

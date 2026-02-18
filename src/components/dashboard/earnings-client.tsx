@@ -44,7 +44,7 @@ interface EarningsClientProps {
 export default function EarningsClient({ stats, chartData, history }: EarningsClientProps) {
 
     const formatMonoyi = (amount: number) =>
-        `${amount.toFixed(2)} MYI`;
+        `${(amount || 0).toFixed(2)} MYI`;
 
     const formatFcfa = (amount: number) =>
         `${(amount * 800).toLocaleString('fr-FR')} FCFA`;
@@ -59,7 +59,7 @@ export default function EarningsClient({ stats, chartData, history }: EarningsCl
     const MonoyiAmount = ({ amount, className = "text-3xl" }: { amount: number, className?: string }) => (
         <div className="flex flex-col">
             <div className={`${className} font-bold flex items-center gap-2`}>
-                {amount.toFixed(2)} MYI <MonoyiIcon className="h-6 w-6 text-primary" />
+                {(amount || 0).toFixed(2)} MYI <MonoyiIcon className="h-6 w-6 text-primary" />
             </div>
             <div className="text-sm font-normal text-muted-foreground mt-1">
                 {(amount * 800).toLocaleString('fr-FR')} FCFA
