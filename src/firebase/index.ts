@@ -28,11 +28,20 @@ export function initializeFirebase() {
       firestore: null,
     };
   }
-  
+
   const firebaseApp = initializeClientApp();
+
+  if (!firebaseApp) {
+    return {
+      firebaseApp: null,
+      auth: null,
+      firestore: null,
+    };
+  }
+
   const auth = getAuth(firebaseApp);
   const firestore = getFirestore(firebaseApp);
-  
+
   return { firebaseApp, auth, firestore };
 }
 
