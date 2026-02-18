@@ -192,14 +192,15 @@ export default function DashboardClient({ ambassador, clients, stats, conversion
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de Conversion</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Créditation en attente</CardTitle>
+            <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(conversionRate || 0).toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.conversionRateDiff >= 0 ? '+' : ''}{(stats.conversionRateDiff || 0).toFixed(1)}% depuis le mois dernier
-            </p>
+            <div className="text-2xl font-bold flex flex-col">
+              <span>{(stats.pendingMonoyi || 0).toFixed(2)} MYI</span>
+              <span className="text-sm font-normal text-muted-foreground">{((stats.pendingMonoyi || 0) * 800).toLocaleString('fr-FR')} FCFA</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{stats.pendingClients} client{stats.pendingClients > 1 ? 's' : ''} à vérifier</p>
           </CardContent>
         </Card>
         <PromoCodeCard ambassador={ambassador} />
@@ -338,6 +339,8 @@ type DashboardClientProps = {
     totalCommission: number
     totalClients: number
     activeClients: number
+    pendingClients: number
+    pendingMonoyi: number
     pointsThisMonth: number
     conversionRateDiff: number
   }

@@ -100,6 +100,8 @@ export default function DashboardPage() {
     totalCommission: safeClients.reduce((acc, client) => acc + client.commissionEarned, 0),
     totalClients: safeClients.length,
     activeClients: safeClients.filter(client => client.isActive).length,
+    pendingClients: safeClients.filter(client => !client.isActive).length,
+    pendingMonoyi: safeClients.filter(client => !client.isActive).length * 10, // 10 MYI per pending signup
     pointsThisMonth,
     conversionRateDiff,
   };
