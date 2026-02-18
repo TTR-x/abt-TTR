@@ -5,12 +5,18 @@ import { getAdminServices } from '@/firebase/server-admin';
 // Headers CORS pour permettre l'appel depuis TTR Gestion (domaine différent)
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 export async function OPTIONS(request: Request) {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
+export async function GET(request: Request) {
+    return NextResponse.json({
+        message: "API promo/verify is online. Use POST method to verify a code."
+    }, { status: 200, headers: corsHeaders });
 }
 
 export async function POST(request: Request) {
